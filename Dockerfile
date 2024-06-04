@@ -7,25 +7,30 @@ FROM python:3.10
 
 #      Slim version
 # FROM python:3.10-slim
+RUN apt-get update && apt-get install -y libhdf5-serial-dev
 
 #      Tensorflow version
 # FROM tensorflow/tensorflow:2.13.0
+
+# FROM tensorflow/ tensorflow:2.15
 
 #      Or tensorflow to run on Apple Silicon (M1 / M2)
 # FROM armswdev/tensorflow-arm-neoverse:r23.08-tf-2.13.0-eigen
 
 
 # Copy everything we need into the image
-COPY packagename packagename
+# COPY packagename packagename
 COPY api api
+COPY .env .env
 COPY scripts scripts
 COPY requirements.txt requirements_docker.txt
 COPY setup.py setup.py
-COPY credentials.json credentials.json
+# COPY credentials.json credentials.json
+# COPY .json .json
 
 # Install everything
-RUN pip install --upgrade pip
-RUN pip install -r requirements_docker.txt
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements_docker.txt
 RUN pip install .
 
 # Make directories that we need, but that are not included in the COPY
