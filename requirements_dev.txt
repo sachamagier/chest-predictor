@@ -30,3 +30,4 @@ notebook==6.4.12
 notebook_shim==0.2.0
 traitlets==5.5.0
 h5py==3.1.0
+kaggle==1.5.12
