@@ -5,7 +5,7 @@ matplotlib
 tqdm
 
 # Uncomment if you use sklearn
-scikit-learn
+# scikit-learn
 
 # Install the correct TensorFlow version
 # Uncomment if you use TensorFlow
@@ -23,3 +23,5 @@ python-dotenv
 # API
 fastapi
 uvicorn
+opencv-python-headless
+h5py
