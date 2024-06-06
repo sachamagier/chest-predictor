@@ -1,12 +1,17 @@
 from fastapi import FastAPI,UploadFile,File
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import Response, FileResponse
+from tensorflow.keras.models import load_model
+from fastapi.responses import JSONResponse
+
+
 import json
 import numpy as np
 import cv2
 import io
 
 app = FastAPI()
+app.state.model = load_model('api/simple_model_best.h5')
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,14 +29,28 @@ async def index():
 #endoint
 
 @app.post('/predictions')
-async def receive_image(img: UploadFile=File(...)):
+async def receive_image(img: UploadFile = File(...)):
     contents = await img.read()
-    np_array = np.fromstring(contents,np.uint8)
-    cv2_img = cv2.imdecode(np_array,cv2.IMREAD_COLOR)
+    np_array = np.frombuffer(contents, np.uint8)  # Updated from np.fromstring, which is deprecated
+    cv2_img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
 
-    #prediction
-    predicted_label = 'desease'
-    return {'message': predicted_label}
+    # Convert the image to grayscale if the model expects grayscale images
+    cv2_img_gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
+
+    # Resize the image to the expected input size (256, 256)
+    cv2_img_gray_resized = cv2.resize(cv2_img_gray, (256, 256))
+
+    # Expand dimensions to match the input shape expected by the model: (1, 256, 256, 1)
+    input_image = np.expand_dims(cv2_img_gray_resized, axis=-1)
+    input_image = np.expand_dims(input_image, axis=0)
+
+    # Predict the label
+    predicted_label = app.state.model.predict(input_image)
+
+    # Convert the prediction to a human-readable format if necessary
+    predicted_label = predicted_label.tolist()  # Convert to list for JSON serialization
+
+    return JSONResponse(content={'message': predicted_label})
 
 
 
