@@ -45,3 +45,7 @@ secrets.toml
 
 # User defined extras
 # Complete to your desire
+images.ipynb
+images.tfrec
+cache.tf-data.index
+cache.tf-data.data-00000-of-00001
