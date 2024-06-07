@@ -11,7 +11,7 @@ import cv2
 import io
 
 app = FastAPI()
-app.state.model = load_model('api/simple_model_best.h5')
+app.state.model = load_model('/Users/sachamagier/code/sachamagier/chest-predictor/models/simple_model_best.h5')
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,10 +47,49 @@ async def receive_image(img: UploadFile = File(...)):
     # Predict the label
     predicted_label = app.state.model.predict(input_image)
 
-    # Convert the prediction to a human-readable format if necessary
-    predicted_label = predicted_label.tolist()  # Convert to list for JSON serialization
+    treshold = 0.4
+    predicted_label_binary = (predicted_label >= treshold).astype("int")
 
+    #display the label name
+    label_names = ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'No Finding']
+
+    #return the label if the prediction is above the treshold
+
+    if predicted_label_binary[0][0] == 1:
+        predicted_label = label_names[0]
+    elif predicted_label_binary[0][1] == 1:
+        predicted_label = label_names[1]
+    elif predicted_label_binary[0][2] == 1:
+        predicted_label = label_names[2]
+    elif predicted_label_binary[0][3] == 1:
+        predicted_label = label_names[3]
+    elif predicted_label_binary[0][4] == 1:
+        predicted_label = label_names[4]
+    elif predicted_label_binary[0][5] == 1:
+        predicted_label = label_names[5]
+    elif predicted_label_binary[0][6] == 1:
+        predicted_label = label_names[6]
+    elif predicted_label_binary[0][7] == 1:
+        predicted_label = label_names[7]
+    elif predicted_label_binary[0][8] == 1:
+        predicted_label = label_names[8]
+    elif predicted_label_binary[0][9] == 1:
+        predicted_label = label_names[9]
+    elif predicted_label_binary[0][10] == 1:
+        predicted_label = label_names[10]
+    elif predicted_label_binary[0][11] == 1:
+        predicted_label = label_names[11]
+    elif predicted_label_binary[0][12] == 1:
+        predicted_label = label_names[12]
+    elif predicted_label_binary[0][13] == 1:
+        predicted_label = label_names[13]
+    else:
+        predicted_label = label_names[14]
+
+
+    # Return the prediction as JSON
     return JSONResponse(content={'message': predicted_label})
+
 
 
 
