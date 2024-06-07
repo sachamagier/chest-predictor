@@ -11,6 +11,7 @@ import cv2
 import io
 
 app = FastAPI()
+app.state.model = load_model('api/simple_model_best.h5')
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,11 +44,8 @@ async def receive_image(img: UploadFile = File(...)):
     input_image = np.expand_dims(cv2_img_gray_resized, axis=-1)
     input_image = np.expand_dims(input_image, axis=0)
 
-    # Load the model
-    model = load_model('/Users/sachamagier/code/sachamagier/chest-predictor-website/simple_model_correct.h5')
-
     # Predict the label
-    predicted_label = model.predict(input_image)
+    predicted_label = app.state.model.predict(input_image)
 
     # Convert the prediction to a human-readable format if necessary
     predicted_label = predicted_label.tolist()  # Convert to list for JSON serialization
