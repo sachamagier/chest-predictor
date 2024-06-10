@@ -30,6 +30,7 @@ data/
 models/
 *.joblib
 *.h5
+*.keras
 
 # Any pickle files
 *.pickle
@@ -45,3 +46,8 @@ secrets.toml
 
 # User defined extras
 # Complete to your desire
+images.ipynb
+images.tfrec
+cache.tf-data.index
+cache.tf-data.data-00000-of-00001
+Untitled.ipynb
