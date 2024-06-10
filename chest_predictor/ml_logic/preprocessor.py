@@ -23,6 +23,7 @@ def preprocess_images(path, resize_param=(224,224)):
         return img_tensor
 
 
+
 def load_and_preprocess_image(path, label):
     """
     Loads and preprocesses an image from a path.
