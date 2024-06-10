@@ -1,7 +1,10 @@
 from fastapi import FastAPI,UploadFile,File
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import Response, FileResponse
+from fastapi.responses import JSONResponse
 from tensorflow.keras.models import load_model
+import tensorflow as tf
+import cv2
+
 from fastapi.responses import JSONResponse
 
 
@@ -11,7 +14,7 @@ import cv2
 import io
 
 app = FastAPI()
-app.state.model = load_model('api/simple_model_best.h5')
+app.state.model = load_model('models/ADE_final_model.keras')
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,47 +37,25 @@ async def receive_image(img: UploadFile = File(...)):
     np_array = np.frombuffer(contents, np.uint8)  # Updated from np.fromstring, which is deprecated
     cv2_img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
 
-    # Convert the image to grayscale if the model expects grayscale images
-    cv2_img_gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
 
-    # Resize the image to the expected input size (256, 256)
-    cv2_img_gray_resized = cv2.resize(cv2_img_gray, (256, 256))
+    # Resize the image to the expected input size (224, 224)
+    cv2_img_resized = cv2.resize(cv2_img, (224, 224))
 
-    # Expand dimensions to match the input shape expected by the model: (1, 256, 256, 1)
-    input_image = np.expand_dims(cv2_img_gray_resized, axis=-1)
-    input_image = np.expand_dims(input_image, axis=0)
+    # If the model expects BGR order, use cv2_img_resized as it is.
+    # If the model expects RGB order, convert it to RGB
+    cv2_img_resized_rgb = cv2.cvtColor(cv2_img_resized, cv2.COLOR_BGR2RGB)
+
+    cv2_img_resized_rgb_normalized = cv2_img_resized_rgb / 255.0
+
+    # Expand dimensions to match the input shape expected by the model: (1, 224, 224, 3)
+    input_tensor = tf.convert_to_tensor(cv2_img_resized_rgb_normalized)
+    # Normalize pixel values if the model expects them to be in the range [0, 1]
+    input_tensor = tf.expand_dims(input_tensor,axis=0)
 
     # Predict the label
-    predicted_label = app.state.model.predict(input_image)
+    predicted_label = app.state.model.predict(input_tensor)
 
     # Convert the prediction to a human-readable format if necessary
     predicted_label = predicted_label.tolist()  # Convert to list for JSON serialization
 
     return JSONResponse(content={'message': predicted_label})
-
-
-
-
-# # Endpoint for https://your-domain.com/predict?input_one=154&input_two=199
-# @app.post("/image_boxes")
-
-# async def receive_image(img: UploadFile=File(...)):
-#     # try:
-#         #receiving the image + decoding it
-#         contents = await img.read()
-
-#         #creating a numpy array from a string of bytes
-#         np_array = np.fromstring(contents,np.uint8)
-#         cv2_img = cv2.imdecode(np_array,cv2.IMREAD_COLOR)
-
-#         #adding our function that detects the location where the deseases is
-
-#         #encoding and responding with an image
-
-#         im = cv2.imencode('.png',cv2_img)[1]
-
-#         return Response(content=im.tobytes(), media_type='image/png')
-
-    # # except Exception as e:
-    #     print(e)
-    #     return {"status": "error", "message": "Unable to process the image"}
