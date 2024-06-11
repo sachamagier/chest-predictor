@@ -5,12 +5,12 @@ from colorama import Fore, Style
 from pathlib import Path
 import tensorflow as tf
 import os
-import shutil
+import shutil ##### delete the ones that you don't use
 
 tf.__version__
 
 project_name = "chest-predictor"
-username = os.environ.get('USER')
+username = os.environ.get('USER') ######## delete this and put it in params.py
 
 #Set variables (origin url, destination folder, folder name)
 data_url = 'https://storage.googleapis.com/chest-predictor-data/resized_dataset.zip'
