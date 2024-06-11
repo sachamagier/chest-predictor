@@ -1,35 +1,19 @@
 import pandas as pd
-
-from google.cloud import bigquery
-from colorama import Fore, Style
-from pathlib import Path
+from chest_predictor.params import *
 import tensorflow as tf
 import os
-import shutil ##### delete the ones that you don't use
 
 tf.__version__
 
-project_name = "chest-predictor"
-username = os.environ.get('USER') ######## delete this and put it in params.py
 
-#Set variables (origin url, destination folder, folder name)
-data_url = 'https://storage.googleapis.com/chest-predictor-data/resized_dataset.zip'
-data_dir = f"/Users/{username}/code/sachamagier/{project_name}/raw_data"
-data_fname = 'resized_dataset.zip'
-
-#Creating a list of the 15 different labels
-label_names = ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'No Finding']
-
-
-
-def downloading_data(data_dir,data_fname,data_url):
-    data_root_orig = tf.keras.utils.get_file(
-    fname=os.path.join(data_dir, data_fname),
-    origin=data_url
+def downloading_data(DATA_DIR,DATA_FNAME,DATA_URL):
+    data_root = tf.keras.utils.get_file(
+    fname=os.path.join(DATA_DIR, DATA_FNAME),
+    origin=DATA_URL
 )
 
 # #This remove the '__MACOSX' file that is created on Mac Laptops
-# if Path(os.path.join(data_dir, "__MACOSX")).is_dir():
+# if Path(os.path.join(DATA_DIR, "__MACOSX")).is_dir():
 #     # remove the __MACOSX folder if it exists
 #     shutil.rmtree("../raw_data/__MACOSX")
 
@@ -63,27 +47,26 @@ def downloading_data(data_dir,data_fname,data_url):
     return all_image_paths
 
 
-def load_labels(data_root_orig,all_images_paths):
-    labels_df = pd.read_csv(data_root_orig /"Data_Entry_2017.csv")
-    labels_df.set_index('Image Index', inplace=True)
 
-    # Create list of all image labels
-    all_image_labels = labels_df.loc[[os.path.basename(path) for path in all_image_paths], 'Finding Labels'].values
 
-    return all_image_labels
+def load_and_encode_labels(DATA_PATH):
+    """
+    Load encoded labels from a CSV file. and then transform them into a tensor
 
-def encoding_labels(label_names, all_image_labels):
-    # Vectorized encoding of labels
-    def encoded_labels(labels):
-        split_labels = tf.strings.split(labels, '|')
-        encoded_labels = string_lookup(split_labels)
-        one_hot_encoded = tf.reduce_sum(tf.one_hot(encoded_labels, depth=len(label_names)), axis=0)
-        return one_hot_encoded
-    ## Apply encoding to all labels in a vectorized manner
-    encoded_values = tf.stack([encoded_labels(labels) for labels in all_image_labels])
-    #Converting to numpy array for printing
-    encoded_values_np = encoded_values.numpy()
-    # Convert encoded values to tensor slices for the dataset
+    Args:
+    - data_path (str): Path to the CSV file containing encoded labels
+    """
+    # Read the CSV file
+    df_labels = pd.read_csv(DATA_PATH)
+
+    # Convert the labels into a TensorFlow tensor
+    encoded_values = tf.convert_to_tensor(df_labels.values, dtype=tf.float32)
     label_ds = tf.data.Dataset.from_tensor_slices(encoded_values)
-
+    # Depending on if we are doing this in another .py or not we can add the nextg line. It creates a Dataset with image paths and encoded labels
+    #path_label_ds = tf.data.Dataset.from_tensor_slices((all_image_paths, encoded_values)) --> add all_image_paths to the function parameters
     return label_ds
+
+
+
+if __name__ == '__main__':
+    downloading_data(DATA_DIR,DATA_FNAME,DATA_URL)

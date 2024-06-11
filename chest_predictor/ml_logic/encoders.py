@@ -1,23 +1,37 @@
 import pandas as pd
 import tensorflow as tf
+import os
 
-data_path = "../raw_data/encoded_labels.csv"
+def load_labels(data_root_orig,all_image_paths):
+    labels_df = pd.read_csv(data_root_orig /"Data_Entry_2017.csv")
+    labels_df.set_index('Image Index', inplace=True)
 
-def load_and_encode_labels(data_path):
-    """
-    Load encoded labels from a CSV file. and then transform them into a tensor
+    # Create list of all image labels
+    all_image_labels = labels_df.loc[[os.path.basename(path) for path in all_image_paths], 'Finding Labels'].values
 
-    Args:
-    - data_path (str): Path to the CSV file containing encoded labels
-    """
-    # Read the CSV file
-    df_labels = pd.read_csv(data_path)
+    return all_image_labels
 
-    # Convert the labels into a TensorFlow tensor
-    encoded_values = tf.convert_to_tensor(df_labels.values, dtype=tf.float32)
+def encoding_labels(label_names, all_image_labels):
+    # Create a StringLookup layer to map labels to indices
+    string_lookup = tf.keras.layers.StringLookup(vocabulary=label_names, num_oov_indices=0)
+    # Vectorized encoding of labels
+    def encoded_labels(labels):
+        # Split the string of labels into a list of individual labels
+        split_labels = tf.strings.split(labels, '|')
+         # Map each label to an index using the StringLookup layer
+        encoded_labels = string_lookup(split_labels)
+       # One-hot encode the indices using the tf.one_hot method
+        # and sum the one-hot vectors using the tf.reduce_sum method
+        # to create a single one-hot vector that represents the presence
+        # or absence of each finding in the chest X-ray image
+        one_hot_encoded = tf.reduce_sum(tf.one_hot(encoded_labels, depth=len(label_names)), axis=0)
+        return one_hot_encoded
+    ## Apply encoding to all labels in a vectorized manner
+    # using the tf.stack method to create a tensor of one-hot vectors
+    encoded_values = tf.stack([encoded_labels(labels) for labels in all_image_labels])
+    # Convert encoded values to tensor slices for the dataset
     label_ds = tf.data.Dataset.from_tensor_slices(encoded_values)
-    # Depending on if we are doing this in another .py or not we can add the nextg line. It creates a Dataset with image paths and encoded labels
-    #path_label_ds = tf.data.Dataset.from_tensor_slices((all_image_paths, encoded_values)) --> add all_image_paths to the function parameters
+
     return label_ds
 
 
