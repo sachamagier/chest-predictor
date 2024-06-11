@@ -61,3 +61,176 @@ def preprocess() -> None:
     )
 
     print("✅ preprocess() done \n")
+
+
+
+
+############################## WORKING ON THE FOLLOWING ##############################
+def train(
+        batch_size = 32,
+        patience = 5
+    ) -> float:
+
+    """
+    - Download processed data from your BQ table (or from cache if it exists)
+    - Train on the preprocessed dataset
+    - Store training results and model weights
+
+    Return metrics: In this case auc...
+    """
+
+    print(Fore.MAGENTA + "\n⭐️ Use case: train" + Style.RESET_ALL)
+    print(Fore.BLUE + "\nLoading preprocessed data..." + Style.RESET_ALL)
+
+    # Load processed data using `get_data_with_cache` in chronological order
+
+    # Below, our columns are called ['_0', '_1'....'_66'] on BQ, student's column names may differ
+    query = f"""
+        SELECT * EXCEPT(_0)
+        FROM `{GCP_PROJECT}`.{BQ_DATASET}.processed_{DATA_SIZE}
+    """
+
+    data_processed_cache_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"processed_{min_date}_{max_date}_{DATA_SIZE}.csv")
+    data_processed = get_data_with_cache(
+        gcp_project=GCP_PROJECT,
+        query=query,
+        cache_path=data_processed_cache_path,
+        data_has_header=False
+    )
+
+    # if data_processed.shape[0] < 10:
+    #     print("❌ Not enough processed data retrieved to train on")
+    #     return None
+
+    # Create (train_ds, val_ds and test_ds)
+    train_length = int(len(data_processed)*(1-split_ratio))
+
+    data_processed_train = data_processed.iloc[:train_length, :].sample(frac=1).to_numpy()
+    data_processed_val = data_processed.iloc[train_length:, :].sample(frac=1).to_numpy()
+
+    X_train_processed = data_processed_train[:, :-1]
+    y_train = data_processed_train[:, -1]
+
+    X_val_processed = data_processed_val[:, :-1]
+    y_val = data_processed_val[:, -1]
+
+    # Train model using `model.py`
+    model = load_model()
+
+    if model is None:
+        model = initialize_model(input_shape=X_train_processed.shape[1:])
+
+    model = compile_model(model, learning_rate=learning_rate)
+    model, history = train_model(
+        model, X_train_processed, y_train,
+        batch_size=batch_size,
+        patience=patience,
+        validation_data=(X_val_processed, y_val)
+    )
+
+    val_mae = np.min(history.history['val_mae'])
+
+    params = dict(
+        context="train",
+        training_set_size=DATA_SIZE,
+        row_count=len(X_train_processed),
+    )
+
+    # Save results on the hard drive using taxifare.ml_logic.registry
+    save_results(params=params, metrics=dict(mae=val_mae))
+
+    # Save model weight on the hard drive (and optionally on GCS too!)
+    save_model(model=model)
+
+    # The latest model should be moved to staging
+    if MODEL_TARGET == 'mlflow':
+        mlflow_transition_model(current_stage="None", new_stage="Staging")
+
+    print("✅ train() done \n")
+
+    return val_mae
+
+
+@mlflow_run
+def evaluate(
+        min_date:str = '2014-01-01',
+        max_date:str = '2015-01-01',
+        stage: str = "Production"
+    ) -> float:
+    """
+    Evaluate the performance of the latest production model on processed data
+    Return MAE as a float
+    """
+    print(Fore.MAGENTA + "\n⭐️ Use case: evaluate" + Style.RESET_ALL)
+
+    model = load_model(stage=stage)
+    assert model is not None
+
+    min_date = parse(min_date).strftime('%Y-%m-%d') # e.g '2009-01-01'
+    max_date = parse(max_date).strftime('%Y-%m-%d') # e.g '2009-01-01'
+
+    # Query your BigQuery processed table and get data_processed using `get_data_with_cache`
+    query = f"""
+        SELECT * EXCEPT(_0)
+        FROM `{GCP_PROJECT}`.{BQ_DATASET}.processed_{DATA_SIZE}
+        WHERE _0 BETWEEN '{min_date}' AND '{max_date}'
+    """
+
+    data_processed_cache_path = Path(f"{LOCAL_DATA_PATH}/processed/processed_{min_date}_{max_date}_{DATA_SIZE}.csv")
+    data_processed = get_data_with_cache(
+        gcp_project=GCP_PROJECT,
+        query=query,
+        cache_path=data_processed_cache_path,
+        data_has_header=False
+    )
+
+    if data_processed.shape[0] == 0:
+        print("❌ No data to evaluate on")
+        return None
+
+    data_processed = data_processed.to_numpy()
+
+    X_new = data_processed[:, :-1]
+    y_new = data_processed[:, -1]
+
+    metrics_dict = evaluate_model(model=model, X=X_new, y=y_new)
+    mae = metrics_dict["mae"]
+
+    params = dict(
+        context="evaluate", # Package behavior
+        training_set_size=DATA_SIZE,
+        row_count=len(X_new)
+    )
+
+    save_results(params=params, metrics=metrics_dict)
+
+    print("✅ evaluate() done \n")
+
+    return mae
+
+
+def pred(X_pred: pd.DataFrame = None) -> np.ndarray:
+    """
+    Make a prediction using the latest trained model
+    """
+
+    print("\n⭐️ Use case: predict")
+
+    if X_pred is None:
+        X_pred = pd.DataFrame(dict(
+        pickup_datetime=[pd.Timestamp("2013-07-06 17:18:00", tz='UTC')],
+        pickup_longitude=[-73.950655],
+        pickup_latitude=[40.783282],
+        dropoff_longitude=[-73.984365],
+        dropoff_latitude=[40.769802],
+        passenger_count=[1],
+    ))
+
+    model = load_model()
+    assert model is not None
+
+    X_processed = preprocess_features(X_pred)
+    y_pred = model.predict(X_processed)
+
+    print("\n✅ prediction done: ", y_pred, y_pred.shape, "\n")
+    return y_pred
