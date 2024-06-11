@@ -2,6 +2,11 @@ import pandas as pd
 from chest_predictor.params import *
 import tensorflow as tf
 import os
+from pathlib import Path
+import zipfile
+import shutil
+from PIL import Image
+import numpy as np
 
 tf.__version__
 
@@ -12,40 +17,59 @@ def downloading_data(DATA_DIR,DATA_FNAME,DATA_URL):
     origin=DATA_URL
 )
 
-# #This remove the '__MACOSX' file that is created on Mac Laptops
-# if Path(os.path.join(DATA_DIR, "__MACOSX")).is_dir():
-#     # remove the __MACOSX folder if it exists
-#     shutil.rmtree("../raw_data/__MACOSX")
+
+#Extract the dataset
+    with zipfile.ZipFile(data_root, 'r') as zip_ref:
+        zip_ref.extractall(DATA_DIR)
+
+    #Set the new data_root
+    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset'))
+
+# # #This remove the '__MACOSX' file that is created on Mac Laptops
+    if Path(os.path.join(DATA_DIR, "__MACOSX")).is_dir():
+#         # remove the __MACOSX folder if it exists
+        shutil.rmtree(os.path.join(DATA_DIR, "__MACOSX"))
 
 #Get all image paths
+    data_root = Path(data_root)
     all_image_paths = [str(path) for path in (data_root/"images"/"set_full").iterdir()]
+    # print("Get all image paths:")
+    # print(all_image_paths)
 
-# it will find all (256,256,4) images and delete them
-# from PIL import Image
-
-# ## specify your dataset directory
-# data_directory = data_root/"images"/"set_full"
-
-# ## list to store the names of the images to be removed
-# images_to_remove = []
-
-# ## iterate over all files in the dataset directory
-# for filename in os.listdir(data_directory):
-#     if filename.endswith(".png"):  # make sure it's a png file
-#         file_path = os.path.join(data_directory, filename)
-#         image = Image.open(file_path)  # load the image with Pillow
-
-#         ## convert the image to a numpy array to check its shape
-#         #image_array = np.array(image)
-
-#         ## check the shape of the image
-#         #if image_array.shape == (256, 256, 4):
-#             #images_to_remove.append(filename)  # add the filename to the list if it's to be removed
-
-# ## uncomment the following line if you're sure about the images to be removed
-# # [os.remove(os.path.join(data_directory, filename)) for filename in images_to_remove]
     return all_image_paths
 
+
+def data_clean(DATA_DIR):
+    # List to store the names of the images to be removed
+    images_to_remove = []
+
+    # Iterate over all files in the dataset directory
+    for filename in os.listdir(DATA_DIR):
+        if filename.endswith(".png"):  # make sure it's a png file
+            file_path = os.path.join(DATA_DIR, filename)
+            image = Image.open(file_path)  # load the image with Pillow
+
+            # Convert the image to a numpy array to check its shape
+            image_array = np.array(image)
+
+            # Check the shape of the image
+            if image_array.shape == (256, 256, 4):
+                images_to_remove.append(filename)  # add the filename to the list if it's to be removed
+
+    # Print the names of the images to be removed
+    print("Images to be removed: ", images_to_remove)
+
+
+
+
+## uncomment the following line if you're sure about the images to be removed
+
+    # # Remove the images from the directory
+    # for filename in images_to_remove:
+    #     file_path = os.path.join(DATA_DIR, filename)
+    #     os.remove(file_path)
+
+    return images_to_remove
 
 
 
