@@ -7,6 +7,10 @@ import tensorflow as tf
 import os
 import shutil ##### delete the ones that you don't use
 
+
+
+
+
 tf.__version__
 
 project_name = "chest-predictor"

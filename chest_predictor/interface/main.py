@@ -8,13 +8,28 @@ from pathlib import Path
 import zipfile
 
 from chest_predictor.params import *
-from chest_predictor.ml_logic.data import downloading_data
+from chest_predictor.ml_logic.data import downloading_data, creating_batch_dataset
 # from chest_predictor.ml_logic.model import initialize_model, compile_model, train_model, evaluate_model
 from chest_predictor.ml_logic.preprocessor import load_and_preprocess_from_path_label
 from chest_predictor.ml_logic.encoders import load_and_encode_labels
+from chest_predictor.ml_logic.registry import load_model, save_model, save_results
 
 #from chest_predictor.ml_logic.registry import load_model, save_model, save_results
 #from chest_predictor.ml_logic.registry import mlflow_run, mlflow_transition_model
+
+
+
+##### This should go in data.py #################################
+
+AUTOTUNE = tf.data.AUTOTUNE
+
+def creating_batch_dataset(dataset, BATCH_SIZE, AUTOTUNE):
+    ds = dataset.repeat()
+    ds = ds.batch(BATCH_SIZE)
+    ds = ds.prefetch(buffer_size=AUTOTUNE)
+    return ds
+
+############################################################
 
 
 data_dir = f"/Users/{username}/code/sachamagier/{project_name}/raw_data"
@@ -52,7 +67,7 @@ def preprocess() -> None:
     path_label_ds = tf.data.Dataset.from_tensor_slices((all_image_paths, encoded_values))
     image_label_ds = path_label_ds.map(load_and_preprocess_from_path_label)
 
-    load_data_to_bq(
+    load_data_to_bq(  ####This part still needs to be edited a bit so that it works with dataset
         image_label_ds,
         gcp_project=GCP_PROJECT,
         bq_dataset=BQ_DATASET,
@@ -103,55 +118,60 @@ def train(
     #     return None
 
     # Create (train_ds, val_ds and test_ds)
-    train_length = int(len(data_processed)*(1-split_ratio))
+    #first the proportions of each set
+    train_size = int(0.6 * len(all_image_paths))
+    val_size = int(0.2 * len(all_image_paths))
+    test_size = int(0.2 * len(all_image_paths))
 
-    data_processed_train = data_processed.iloc[:train_length, :].sample(frac=1).to_numpy()
-    data_processed_val = data_processed.iloc[train_length:, :].sample(frac=1).to_numpy()
+    ###
+    train_ds = image_label_ds.take(train_size)
+    val_ds = image_label_ds.skip(train_size).take(val_size)
+    test_ds = image_label_ds.skip(train_size + val_size).take(test_size)
 
-    X_train_processed = data_processed_train[:, :-1]
-    y_train = data_processed_train[:, -1]
-
-    X_val_processed = data_processed_val[:, :-1]
-    y_val = data_processed_val[:, -1]
-
+    #load the data in batches
+    ds = creating_batch_dataset(image_label_ds, batch_size, AUTOTUNE)
+    train_ds = creating_batch_dataset(train_ds, batch_size, AUTOTUNE)
+    val_ds = creating_batch_dataset(val_ds, batch_size, AUTOTUNE)
+    test_ds = creating_batch_dataset(test_ds, batch_size, AUTOTUNE)
     # Train model using `model.py`
     model = load_model()
 
     if model is None:
-        model = initialize_model(input_shape=X_train_processed.shape[1:])
+        model = initialize_model(input_shape=(224, 224, 3))# ---> the initialize_model() function needs to be created in model.py
 
-    model = compile_model(model, learning_rate=learning_rate)
+    model = compile_model(model, learning_rate=learning_rate)#--> same as compile_model
     model, history = train_model(
-        model, X_train_processed, y_train,
+        model, train_ds,
         batch_size=batch_size,
         patience=patience,
-        validation_data=(X_val_processed, y_val)
+        validation_data=val_ds
     )
 
-    val_mae = np.min(history.history['val_mae'])
+    val_auc = np.min(history.history['val_mae']) # ---> if there is another metric change it here
 
-    params = dict(
-        context="train",
-        training_set_size=DATA_SIZE,
-        row_count=len(X_train_processed),
-    )
+
+
+    # params = dict(
+    #     context="train",
+    #     training_set_size=DATA_SIZE,
+    #     row_count=len(X_train_processed),
+    # )
 
     # Save results on the hard drive using taxifare.ml_logic.registry
-    save_results(params=params, metrics=dict(mae=val_mae))
+    save_results(params=params, metrics=dict(mae=val_auc))
 
     # Save model weight on the hard drive (and optionally on GCS too!)
     save_model(model=model)
 
-    # The latest model should be moved to staging
-    if MODEL_TARGET == 'mlflow':
-        mlflow_transition_model(current_stage="None", new_stage="Staging")
+    # # The latest model should be moved to staging
+    # if MODEL_TARGET == 'mlflow':
+    #     mlflow_transition_model(current_stage="None", new_stage="Staging")
 
-    print("✅ train() done \n")
+    # print("✅ train() done \n")
 
-    return val_mae
+    return val_auc
 
 
-@mlflow_run
 def evaluate(
         min_date:str = '2014-01-01',
         max_date:str = '2015-01-01',
