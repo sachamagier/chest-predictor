@@ -27,7 +27,7 @@ def downloading_data(DATA_DIR,DATA_FNAME,DATA_URL):
         zip_ref.extractall(DATA_DIR)
 
     #Set the new data_root
-    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset'))
+    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset_test'))
 
 # # #This remove the '__MACOSX' file that is created on Mac Laptops
     if Path(os.path.join(DATA_DIR, "__MACOSX")).is_dir():
