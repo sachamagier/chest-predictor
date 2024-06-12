@@ -1,8 +1,8 @@
 colorama
-
+wheel
 # data science
-numpy
-pandas
+numpy==1.23.5
+pandas==1.5.3
 matplotlib
 tqdm
 
@@ -23,7 +23,7 @@ google-cloud-storage
 python-dotenv
 
 # API
-fastapi
+fastapi==0.108.0
 uvicorn
 opencv-python-headless
-h5py
+h5py==3.10.0
