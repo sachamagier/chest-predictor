@@ -14,7 +14,7 @@ import cv2
 import io
 
 app = FastAPI()
-app.state.model = load_model('models/best_only_disease_model.keras')
+app.state.model = load_model('models/ADE_final_model.keras')
 
 app.add_middleware(
     CORSMiddleware,

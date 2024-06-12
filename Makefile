@@ -2,6 +2,11 @@
 # Install, clean, test #
 #======================#
 
+
+reinstall_package:
+	@pip uninstall -y chest_predictor || :
+	@pip install -e .
+
 install_requirements:
 	@pip install -r requirements.txt
 
