@@ -51,7 +51,7 @@ def save_model(model: keras.Model = None) -> None:
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
     # Save model locally
-    model_path = os.path.join(LOCAL_REGISTRY_PATH, "models", f"{timestamp}.keras")
+    model_path = os.path.join(MODEL_PATH, f"{timestamp}.keras")
     model.save(model_path)
 
     print("✅ Model saved locally")
@@ -96,7 +96,7 @@ def load_model(stage="Production") -> keras.Model:
         print(Fore.BLUE + f"\nLoad latest model from local registry..." + Style.RESET_ALL)
 
         # Get the latest model version name by the timestamp on disk
-        local_model_directory = os.path.join(LOCAL_REGISTRY_PATH, "models")
+        local_model_directory = os.path.join(MODEL_PATH)
         local_model_paths = glob.glob(f"{local_model_directory}/*")
 
         if not local_model_paths:
