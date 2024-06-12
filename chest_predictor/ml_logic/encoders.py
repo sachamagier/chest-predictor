@@ -1,15 +1,21 @@
 import pandas as pd
 import tensorflow as tf
 import os
+from pathlib import Path
+from chest_predictor.params import *
 
-def load_labels(data_root_orig,all_image_paths):
-    labels_df = pd.read_csv(data_root_orig /"Data_Entry_2017.csv")
+
+def load_labels(DATA_DIR, all_image_paths):
+    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset'))
+    labels_df = pd.read_csv(data_root /"Data_Entry_2017.csv")
     labels_df.set_index('Image Index', inplace=True)
 
     # Create list of all image labels
     all_image_labels = labels_df.loc[[os.path.basename(path) for path in all_image_paths], 'Finding Labels'].values
 
-    return all_image_labels
+    return labels_df, all_image_labels
+
+
 
 def encoding_labels(label_names, all_image_labels):
     # Create a StringLookup layer to map labels to indices
@@ -38,13 +44,18 @@ def encoding_labels(label_names, all_image_labels):
 
 ### the next code could be used if necessary in the future
 
-#to have a vocabulary
-label_names = ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema',
-               'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening',
-               'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'No Finding']
-string_lookup = tf.keras.layers.StringLookup(vocabulary=label_names, num_oov_indices=0)
-vocab = string_lookup.get_vocabulary()
+# #to have a vocabulary
+# label_names = ['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema',
+#                'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening',
+#                'Cardiomegaly', 'Nodule', 'Mass', 'Hernia', 'No Finding']
+# string_lookup = tf.keras.layers.StringLookup(vocabulary=label_names, num_oov_indices=0)
+# vocab = string_lookup.get_vocabulary()
 
 # Display the vocabulary and their corresponding indices
-for i, label in enumerate(vocab):
-    print(f"Index {i}: {label}")
+# for i, label in enumerate(vocab):
+#     print(f"Index {i}: {label}")
+
+if __name__ == '__main__':
+
+    load_labels(DATA_DIR)
+    print('labels loaded 💪')

@@ -59,9 +59,13 @@ def data_clean(DATA_DIR):
 
     # Print the names of the images to be removed
     # print("Images to be removed: ", images_to_remove)
+    ## uncomment the following line if you're sure about the images to be remove
+    # # Remove the images from the directory
+    for filename in images_to_remove:
+        file_path = os.path.join(os.path.join(DATA_DIR, "resized_dataset", "images", "set_full"), filename)
+        os.remove(file_path)
+    print(f"✅ Data removed in your computer")
 
-
-    return images_to_remove
 
 
 
@@ -86,13 +90,8 @@ def data_clean(DATA_DIR):
 
 if __name__ == '__main__':
     downloading_data(DATA_DIR,DATA_FNAME,DATA_URL)
-    images_to_remove = data_clean(os.path.join(DATA_DIR, "resized_dataset", "images", "set_full"))
-    ## uncomment the following line if you're sure about the images to be remove
-    # # Remove the images from the directory
-    for filename in images_to_remove:
-        file_path = os.path.join(os.path.join(DATA_DIR, "resized_dataset", "images", "set_full"), filename)
-        os.remove(file_path)
-    print(f"✅ Data removed in your computer")
+    data_clean(os.path.join(DATA_DIR, "resized_dataset", "images", "set_full"))
+
 
     # Load and encode the labels
     # label_ds = load_and_encode_labels(DATA_PATH_LABEL)
