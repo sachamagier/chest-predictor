@@ -70,6 +70,11 @@ def data_clean(DATA_DIR):
         os.remove(file_path)
     print(f"✅ Data removed in your computer")
 
+def creating_batch_dataset(dataset, BATCH_SIZE, AUTOTUNE):
+    ds = dataset.repeat()
+    ds = ds.batch(BATCH_SIZE)
+    ds = ds.prefetch(buffer_size=AUTOTUNE)
+    return ds
 
 
 

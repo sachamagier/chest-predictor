@@ -9,3 +9,7 @@ DATA_URL = 'https://storage.googleapis.com/chest-predictor-data/resized_dataset.
 DATA_DIR =os.path.join(os.path.expanduser('~'), "code", "sachamagier", 'chest-predictor','raw_data')
 DATA_FNAME = 'resized_dataset.zip'
 DATA_PATH_LABEL = "../raw_data/encoded_labels.csv"
+
+
+
+#https://storage.googleapis.com/chest-predictor-data/resized_dataset_test.zip if you want to test the code

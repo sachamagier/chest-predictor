@@ -31,11 +31,6 @@ def creating_batch_dataset(dataset, BATCH_SIZE, AUTOTUNE):
 
 ############################################################
 
-
-data_dir = f"/Users/{username}/code/sachamagier/{project_name}/raw_data"
-data_fname = 'resized_dataset.zip'
-
-
 def preprocess() -> None:
     """
     - Download data if not already downloaded
@@ -43,10 +38,10 @@ def preprocess() -> None:
     - Get all image paths (and remove invalid images--> to be implemented)
     """
     # Check if the data has been downloaded
-    data_root_orig = Path(os.path.join(data_dir, 'resized_dataset'))
+    data_root_orig = Path(os.path.join(DATA_DIR, 'resized_dataset'))
     if not os.path.exists(data_root_orig):
         print("Data is not downloaded. Downloading  an unzipping...")
-        data_root_orig = downloading_data(data_dir, data_fname, data_url) ########### make these global vars
+        data_root_orig = downloading_data(DATA_DIR, DATA_FNAME, D) ########### make these global vars
         with zipfile.ZipFile(data_root_orig, 'r') as zip_ref:
             zip_ref.extractall(data_dir)
     elif not (data_root_orig/"images"/"set_full").exists():
