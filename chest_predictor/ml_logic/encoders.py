@@ -7,8 +7,8 @@ from chest_predictor.ml_logic.data import downloading_data
 
 
 def load_labels(DATA_DIR):
-    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset_test'))
-    labels_df = pd.read_csv(data_root /"Data_Entry_2017_test.csv")
+    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset'))
+    labels_df = pd.read_csv(data_root /"Data_Entry_2017.csv")
     labels_df.set_index('Image Index', inplace=True)
     # Create list of all image labels
     all_image_paths = downloading_data(DATA_DIR,DATA_FNAME,DATA_URL)

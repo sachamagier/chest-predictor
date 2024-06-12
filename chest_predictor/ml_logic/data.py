@@ -27,7 +27,7 @@ def downloading_data(DATA_DIR,DATA_FNAME,DATA_URL):
         zip_ref.extractall(DATA_DIR)
 
     #Set the new data_root
-    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset_test'))
+    data_root = Path(os.path.join(DATA_DIR, 'resized_dataset'))
 
 # # #This remove the '__MACOSX' file that is created on Mac Laptops
     if Path(os.path.join(DATA_DIR, "__MACOSX")).is_dir():
@@ -70,6 +70,11 @@ def data_clean(DATA_DIR):
         os.remove(file_path)
     print(f"✅ Data removed in your computer")
 
+def creating_batch_dataset(dataset, BATCH_SIZE, AUTOTUNE):
+    ds = dataset.repeat()
+    ds = ds.batch(BATCH_SIZE)
+    ds = ds.prefetch(buffer_size=AUTOTUNE)
+    return ds
 
 
 
