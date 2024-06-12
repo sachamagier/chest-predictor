@@ -17,8 +17,8 @@ app = FastAPI()
 
 
 #open the model which is in the models folder .py file
-app.state.model = load_model('/Users/sachamagier/code/sachamagier/chest-predictor/models/cnn_keras (2).py')
-
+app.state.model_binary = load_model('models/data/ADE_final_binary_model.keras')
+app.state.model_all = load_model('models/data/best_only_disease_model.keras')
 
 app.add_middleware(
     CORSMiddleware,
@@ -64,26 +64,44 @@ async def receive_image(img: UploadFile = File(...)):
     # Expand dimensions to match the input shape expected by the model: (1, 224, 224, 3)
     input_tensor = tf.expand_dims(input_tensor,axis=0)
 
-    # Predict the label
-    predicted_lab = app.state.model.predict(input_tensor)
-    predicted_labels = predicted_lab[0]
-
-    # Convert the prediction to a human-readable format if necessary
-    predicted_label = predicted_labels.tolist()  # Convert to list for JSON serialization
-    content={'Atelectasis': predicted_label[0],
-               'Consolidation': predicted_label[1],
-               'Infiltration': predicted_label[2],
-               'Pneumothorax': predicted_label[3],
-               'Edmema': predicted_label[4],
-               'Emphysema': predicted_label[5],
-               'fibrosis': predicted_label[6],
-                'Effusion': predicted_label[7],
-                'Pneumonia': predicted_label[8],
-                'Pleural Thickening': predicted_label[9],
-                'Cardiomegaly': predicted_label[10],
-                'Nodule': predicted_label[11],
-               'Mass': predicted_label[12],
-               'Hernia': predicted_label[13]}
 
 
-    return JSONResponse(content= content)
+
+    #Predict the binary model
+    predicted_labels_binary = app.state.model_binary.predict(input_tensor)
+    predicted_labels_binary = predicted_labels_binary[0]
+
+
+    if predicted_labels_binary[0] < 0.5:
+        content = 'No disease detected, you are healthy!'
+        return JSONResponse(content=content)
+
+    # If the binary model predicts that the disease is found
+    if predicted_labels_binary[0] >= 0.5:
+        # Predict with the second model and return the disease name with the highest probability
+        predicted_labels = app.state.model_all.predict(input_tensor)
+        predicted_labels = predicted_labels[0]
+
+        # Get the index of the highest probability
+        predicted_label = np.argmax(predicted_labels)
+
+        # Logging the predicted labels and the selected label
+        print(f"Predicted labels: {predicted_labels}")
+        print(f"Predicted label index: {predicted_label}")
+
+        # mapping of indices to disease names
+        disease_names = {
+             0: 'Atelectasis', 1: 'Consolidation', 2: 'Infiltration', 3: 'Pneumothorax',
+             4: 'Edema', 5: 'Emphysema', 6: 'Fibrosis', 7: 'Effusion', 8: 'Pneumonia',
+             9: 'Pleural_Thickening', 10: 'Cardiomegaly', 11: 'Nodule', 12: 'Mass', 13: 'Hernia'
+         }
+
+        if predicted_label in disease_names:
+             disease_name = disease_names[predicted_label]
+             # response content
+             content = f'We found a disease: {disease_name}. You should consult a doctor!'
+        else:
+             # This should not happen if the models are producing correct output
+             content = 'Error: Disease label not found.'
+
+        return JSONResponse(content=content)
