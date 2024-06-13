@@ -1,8 +1,10 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from tensorflow.keras.models import load_model
 import tensorflow as tf
+from tensorflow.keras.models import load_model
+import os
+
 import cv2
 
 from fastapi.responses import JSONResponse
@@ -11,14 +13,12 @@ from fastapi.responses import JSONResponse
 import json
 import numpy as np
 import cv2
-import tensorflow as tf
 
 app = FastAPI()
 
-
 #open the model which is in the models folder .py file
-app.state.model_binary = load_model('models/data/ADE_final_binary_model.keras')
-app.state.model_all = load_model('models/data/best_only_disease_model.keras')
+app.state.model_binary = load_model('models/ADE_final_binary_model.keras')
+app.state.model_all = load_model('models/best_only_disease_model.keras')
 
 app.add_middleware(
     CORSMiddleware,

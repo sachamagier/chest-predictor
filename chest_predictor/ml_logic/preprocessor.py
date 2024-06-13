@@ -24,7 +24,7 @@ def preprocess_images(path, resize_param=(224,224)):
 
 
 
-def load_and_preprocess_from_path_label(path, label):
+def load_and_preprocess_from_path_label(x, y):
     """
     Loads and preprocesses an image from a path.
     """
