@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y libhdf5-serial-dev
 #      Tensorflow version
 # FROM tensorflow/tensorflow:2.13.0
 
-# FROM tensorflow/ tensorflow:2.15
+#FROM tensorflow/ tensorflow:2.15
 
 #      Or tensorflow to run on Apple Silicon (M1 / M2)
 # FROM armswdev/tensorflow-arm-neoverse:r23.08-tf-2.13.0-eigen
@@ -25,6 +25,7 @@ COPY .env .env
 COPY scripts scripts
 COPY requirements.txt requirements_docker.txt
 COPY setup.py setup.py
+COPY /models /models
 # COPY credentials.json credentials.json
 # COPY .json .json
 
@@ -35,7 +36,7 @@ RUN pip install .
 
 # Make directories that we need, but that are not included in the COPY
 RUN mkdir /raw_data
-RUN mkdir /models
+# RUN mkdir /models
 
 # TODO: to speed up, you can load your model from MLFlow or Google Cloud Storage at startup using
 # RUN python -c 'replace_this_with_the_commands_you_need_to_run_to_load_the_model'

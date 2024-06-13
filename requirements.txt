@@ -27,3 +27,4 @@ fastapi==0.108.0
 uvicorn
 opencv-python-headless
 h5py==3.10.0
+python-multipart==0.0.9
