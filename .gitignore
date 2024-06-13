@@ -31,6 +31,9 @@ models/
 *.joblib
 *.h5
 *.keras
+*logs
+
+logs/
 
 # Any pickle files
 *.pickle
