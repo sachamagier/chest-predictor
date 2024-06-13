@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from tensorflow.keras.models import load_model
 import os
 import numpy as np
 import cv2
@@ -11,8 +10,8 @@ import cv2
 app = FastAPI()
 
 #open the model which is in the models folder .py file
-app.state.model_binary = load_model('/Users/arnodebelle/code/sachamagier/chest-predictor/models/BEST_resnet_model_final.h5')
-app.state.model_all = load_model('/Users/arnodebelle/code/sachamagier/chest-predictor/models/last_resnet_diseases_model.keras')
+app.state.model_binary = load_model('models/BEST_resnet_model_final.h5')
+app.state.model_all = load_model('models/last_resnet_diseases_model.keras')
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,18 +84,17 @@ async def receive_image(img: UploadFile = File(...)):
         print(f"Predicted label index: {predicted_label}")
 
         # mapping of indices to disease names
-        if app.state.model_all == load_model('/Users/arnodebelle/code/sachamagier/chest-predictor/models/last_resnet_diseases_model.keras'):
-            disease_names = {
-                0: 'Cardiomegaly', 1: 'Infiltration', 2: 'Effusion', 3: 'Nodule',
-                4: 'Emphysema', 5: 'Atelectasis', 6: 'Pleural Thickening', 7: 'Pneumothorax', 8: 'Mass',
-                9: 'Fibrosis', 10: 'Consolidation', 11: 'Edema'
-                }
-        else:
-            disease_names = {
-                0: 'Atelectasis', 1: 'Consolidation', 2: 'Infiltration', 3: 'Pneumothorax',
-                4: 'Edema', 5: 'Emphysema', 6: 'Fibrosis', 7: 'Effusion', 8: 'Pneumonia',
-                9: 'Pleural_Thickening', 10: 'Cardiomegaly', 11: 'Nodule', 12: 'Mass', 13: 'Hernia'
-                }
+        disease_names = {
+            0: 'Cardiomegaly', 1: 'Effusion', 2: 'Infiltration', 3: 'Pneumothorax',
+            4: 'Emphysema', 5: 'Atelectasis', 6: 'Pleural Thickening', 7: 'Nodule', 8: 'Mass',
+            9: 'Fibrosis', 10: 'Consolidation', 11: 'Edema'
+            }
+        # else:
+        #     disease_names = {
+        #         0: 'Atelectasis', 1: 'Consolidation', 2: 'Infiltration', 3: 'Pneumothorax',
+        #         4: 'Edema', 5: 'Emphysema', 6: 'Fibrosis', 7: 'Effusion', 8: 'Pneumonia',
+        #         9: 'Pleural_Thickening', 10: 'Cardiomegaly', 11: 'Nodule', 12: 'Mass', 13: 'Hernia'
+        #         }
 
 
         if predicted_label in disease_names:
