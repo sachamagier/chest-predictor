@@ -41,6 +41,7 @@ logs/
 *.pkl
 
 # Credentials (or files with potentially credentials inside)
+.env.2
 .env
 .env.yaml
 .credentials
