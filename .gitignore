@@ -32,6 +32,8 @@ models/
 *.h5
 *.keras
 
+logs/
+
 # Any pickle files
 *.pickle
 *.pckl
